@@ -71,19 +71,17 @@ using namespace std;
 vector<shared_ptr<rule_t>> rules;
 
 
-void apply_rules(pid_t pid) {
+void apply_rules(struct proc_event const * ev) {
 	for(auto r : rules) {
-		if(r->check_rule(pid))
+		if(r->apply_rule(ev))
 			break;
 	}
 }
 
-void handle_msg (struct cn_msg *cn_hdr)
-{
+void debug_log(struct proc_event *ev) {
 	char cmdline[1024], fname1[1024], ids[1024], fname2[1024], buf[1024];
 	int r = 0, fd, i;
 	FILE *f = NULL;
-	struct proc_event *ev = (struct proc_event *)cn_hdr->data;
 
 	snprintf(fname1, sizeof(fname1), "/proc/%d/status", ev->event_data.exec.process_pid);
 	snprintf(fname2, sizeof(fname2), "/proc/%d/cmdline", ev->event_data.exec.process_pid);
@@ -120,13 +118,11 @@ void handle_msg (struct cn_msg *cn_hdr)
 		       ev->event_data.fork.parent_tgid,
 		       ev->event_data.fork.child_pid,
 		       ev->event_data.fork.child_tgid, cmdline);
-		apply_rules(ev->event_data.fork.child_pid);
 		break;
 	case proc_event::PROC_EVENT_EXEC:
 		printf("EXEC:pid=%d,tgid=%d\t[%s]\t[%s]\n",
 		       ev->event_data.exec.process_pid,
 		       ev->event_data.exec.process_tgid, ids, cmdline);
-		apply_rules(ev->event_data.exec.process_pid);
 		break;
 	case proc_event::PROC_EVENT_EXIT:
 		printf("EXIT:pid=%d,%d\texit code=%d\n",
@@ -138,11 +134,21 @@ void handle_msg (struct cn_msg *cn_hdr)
 		printf("UID:pid=%d,%d ruid=%d,euid=%d\n",
 			ev->event_data.id.process_pid, ev->event_data.id.process_tgid,
 			ev->event_data.id.r.ruid, ev->event_data.id.e.euid);
-		apply_rules(ev->event_data.exec.process_pid);
 		break;
 	default:
 		break;
 	}
+}
+
+
+void handle_msg (struct cn_msg *cn_hdr)
+{
+
+	struct proc_event *ev = (struct proc_event *)cn_hdr->data;
+
+	debug_log(ev);
+	apply_rules(ev);
+
 }
 
 
@@ -165,10 +171,10 @@ int main(int argc, char **argv)
 	if (argc != 1)
 		return 0;
 
-	config_parser_t conf{"/etc/oom_adj.conf"};
-	rules = conf.get_rules();
-
 	setvbuf(stdout, NULL, _IONBF, 0);
+
+	config_parser_t conf;
+	rules = conf.parse("/etc/oom_adj.conf");
 
 	/*
 	 * Create an endpoint for communication. Use the kernel user
