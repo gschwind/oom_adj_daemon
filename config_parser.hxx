@@ -129,10 +129,31 @@ struct token_handler_t {
 
 vector<string> split(string const & s, regex const & r) {
 	vector<string> ret;
-	sregex_token_iterator i{s.begin(), s.end(), r, -1};
-	for (; i != sregex_token_iterator{}; ++i) {
-		ret.push_back(i->str());
+	vector<int> x;
+//	sregex_token_iterator i{s.begin(), s.end(), r, -1};
+//	for (; i != sregex_token_iterator{}; ++i) {
+//		ret.push_back(i->str());
+//	}
+
+	smatch m;
+	regex_search(s, m, r);
+
+	x.push_back(0);
+	for(int i = 0; i < m.size(); ++i) {
+		int pos = m.position(i);
+		int len = pos + m.length(i);
+		if (x[x.size() - 1] < pos) {
+			x.push_back(pos);
+			x.push_back(len);
+		}
 	}
+	x.push_back(s.size());
+
+	for(int i = 0; i < x.size(); i += 2) {
+		//cout << string({&(s[x[i]]), &(s[x[i+1]])}) << endl;
+		ret.push_back(string({&(s[x[i]]), &(s[x[i+1]])}));
+	}
+
 	return ret;
 }
 
