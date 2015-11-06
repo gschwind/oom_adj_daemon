@@ -47,6 +47,10 @@
 #include <linux/netlink.h>
 #include <linux/cn_proc.h>
 
+#include "config_parser.hxx"
+
+using namespace std;
+
 #define SEND_MESSAGE_LEN (NLMSG_LENGTH(sizeof(struct cn_msg) + \
 				       sizeof(enum proc_cn_mcast_op)))
 #define RECV_MESSAGE_LEN (NLMSG_LENGTH(sizeof(struct cn_msg) + \
@@ -64,6 +68,15 @@
 #define PROC_CN_MCAST_LISTEN (1)
 #define PROC_CN_MCAST_IGNORE (2)
 
+vector<shared_ptr<rule_t>> rules;
+
+
+void apply_rules(pid_t pid) {
+	for(auto r : rules) {
+		if(r->check_rule(pid))
+			break;
+	}
+}
 
 void handle_msg (struct cn_msg *cn_hdr)
 {
@@ -107,11 +120,13 @@ void handle_msg (struct cn_msg *cn_hdr)
 		       ev->event_data.fork.parent_tgid,
 		       ev->event_data.fork.child_pid,
 		       ev->event_data.fork.child_tgid, cmdline);
+		apply_rules(ev->event_data.fork.child_pid);
 		break;
 	case proc_event::PROC_EVENT_EXEC:
 		printf("EXEC:pid=%d,tgid=%d\t[%s]\t[%s]\n",
 		       ev->event_data.exec.process_pid,
 		       ev->event_data.exec.process_tgid, ids, cmdline);
+		apply_rules(ev->event_data.exec.process_pid);
 		break;
 	case proc_event::PROC_EVENT_EXIT:
 		printf("EXIT:pid=%d,%d\texit code=%d\n",
@@ -123,6 +138,7 @@ void handle_msg (struct cn_msg *cn_hdr)
 		printf("UID:pid=%d,%d ruid=%d,euid=%d\n",
 			ev->event_data.id.process_pid, ev->event_data.id.process_tgid,
 			ev->event_data.id.r.ruid, ev->event_data.id.e.euid);
+		apply_rules(ev->event_data.exec.process_pid);
 		break;
 	default:
 		break;
@@ -148,6 +164,9 @@ int main(int argc, char **argv)
 	}
 	if (argc != 1)
 		return 0;
+
+	config_parser_t conf{"/etc/oom_adj.conf"};
+	rules = conf.get_rules();
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 

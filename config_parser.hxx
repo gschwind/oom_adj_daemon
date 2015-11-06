@@ -1,8 +1,12 @@
 
+#ifndef _CONFIG_PARSER_HXX_
+#define _CONFIG_PARSER_HXX_
+
 #include <vector>
 #include <memory>
 #include <regex>
 #include <fstream>
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 
@@ -23,7 +27,7 @@ public:
 };
 
 class group_rule_t : public rule_t {
-	int gid;
+	gid_t gid;
 	int adj;
 
 public:
@@ -73,7 +77,7 @@ public:
 };
 
 class user_rule_t : public rule_t {
-	int uid;
+	uid_t uid;
 	int adj;
 
 public:
@@ -140,12 +144,12 @@ public:
 
 
 	config_parser_t(char const * filename) {
-		regex space = r"\s+";
-		regex group_name = r"@[_[:alpha:]]\w*";
-		regex group_id = r"@\d+";
-		regex user_name = r"[_[:alpha:]]\w*";
-		regex user_id = r"\d+";
-		regex number = r"[+-]?\d+";
+		regex space{"\\s+"};
+		regex group_name{"@[_[:alpha:]]\\w*"};
+		regex group_id{"@\\d+"};
+		regex user_name{"[_[:alpha:]]\\w*"};
+		regex user_id{"\\d+"};
+		regex number{"[+-]?\\d+"};
 
 		ifstream in(filename, ios::in);
 		string line;
@@ -173,26 +177,26 @@ public:
 
 			if(regex_match(x[0], group_name)) {
 				struct group * grp;
-				grp = getpwnam(&(x[0].c_str())[1]);
+				grp = getgrnam(&(x[0].c_str())[1]);
 				if(grp != 0) {
-					rules.push_back(group_rule_t(grp->gr_gid, adj));
+					rules.push_back(make_shared<group_rule_t>(grp->gr_gid, adj));
 				} else {
 					std::cout << "not found group id: " << x[0] << std::endl;
 				}
 			} else if (regex_match(x[0], group_id)) {
 				gid_t gid = atoi(&(x[0].c_str())[1]);
-				rules.push_back(group_rule_t(gid, adj));
+				rules.push_back(make_shared<group_rule_t>(gid, adj));
 			} else if (regex_match(x[0], user_name)) {
 				struct passwd * pwd;
 				pwd = getpwnam(x[0].c_str());
 				if(pwd != 0) {
-					rules.push_back(user_rule_t(pwd->pw_uid, adj));
+					rules.push_back(make_shared<user_rule_t>(pwd->pw_uid, adj));
 				} else {
 					std::cout << "not found user id: " << x[0] << std::endl;
 				}
 			} else if (regex_match(x[0], user_id)) {
 				uid_t uid = stoi(x[0]);
-				rules.push_back(user_rule_t(uid, adj));
+				rules.push_back(make_shared<user_rule_t>(uid, adj));
 			}
 		}
 	}
@@ -200,4 +204,4 @@ public:
 };
 
 
-
+#endif

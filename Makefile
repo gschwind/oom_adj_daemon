@@ -1,6 +1,5 @@
 
 all:
-	flex -c++ config_parser.lex
-	g++ -c -Wall -ansi -pedantic -std=c++11 exec-notify.c
-	g++ -o oom_adj_daemon -Wall -ansi -pedantic -std=c++11 exec-notify.o
+	g++ -c -Wall -std=c++11 exec-notify.cxx
+	g++ -o oom_adj_daemon -Wall -std=c++11 exec-notify.o
 
