@@ -101,25 +101,25 @@ void handle_msg (struct cn_msg *cn_hdr)
 	}
 
 	switch(ev->what){
-	case PROC_EVENT_FORK:
+	case proc_event::PROC_EVENT_FORK:
 		printf("FORK:parent(pid,tgid)=%d,%d\tchild(pid,tgid)=%d,%d\t[%s]\n",
 		       ev->event_data.fork.parent_pid,
 		       ev->event_data.fork.parent_tgid,
 		       ev->event_data.fork.child_pid,
 		       ev->event_data.fork.child_tgid, cmdline);
 		break;
-	case PROC_EVENT_EXEC:
+	case proc_event::PROC_EVENT_EXEC:
 		printf("EXEC:pid=%d,tgid=%d\t[%s]\t[%s]\n",
 		       ev->event_data.exec.process_pid,
 		       ev->event_data.exec.process_tgid, ids, cmdline);
 		break;
-	case PROC_EVENT_EXIT:
+	case proc_event::PROC_EVENT_EXIT:
 		printf("EXIT:pid=%d,%d\texit code=%d\n",
 		       ev->event_data.exit.process_pid,
 		       ev->event_data.exit.process_tgid,
 		       ev->event_data.exit.exit_code);
 		break;
-	case PROC_EVENT_UID:
+	case proc_event::PROC_EVENT_UID:
 		printf("UID:pid=%d,%d ruid=%d,euid=%d\n",
 			ev->event_data.id.process_pid, ev->event_data.id.process_tgid,
 			ev->event_data.id.r.ruid, ev->event_data.id.e.euid);
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
 	printf("sending proc connector: PROC_CN_MCAST_LISTEN... ");
 	memset(buff, 0, sizeof(buff));
-	*mcop_msg = PROC_CN_MCAST_LISTEN;
+	*mcop_msg = (enum proc_cn_mcast_op)PROC_CN_MCAST_LISTEN;
 
 	/* fill the netlink header */
 	nl_hdr->nlmsg_len = SEND_MESSAGE_LEN;
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
 		if (recv_len < 1)
 			continue;
 		while (NLMSG_OK(nlh, recv_len)) {
-			cn_hdr = NLMSG_DATA(nlh);
+			cn_hdr = (struct cn_msg *)NLMSG_DATA(nlh);
 			if (nlh->nlmsg_type == NLMSG_NOOP)
 				continue;
 			if ((nlh->nlmsg_type == NLMSG_ERROR) ||
