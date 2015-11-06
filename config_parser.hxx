@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <boost/regex.hpp>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -127,7 +129,7 @@ struct token_handler_t {
 	token_handler_t(token_type_e type, int value) : type(type), value(value) { }
 };
 
-vector<string> split(string const & s, regex const & r) {
+vector<string> split(string const & s, boost::regex const & r) {
 	vector<string> ret;
 	vector<int> x;
 //	sregex_token_iterator i{s.begin(), s.end(), r, -1};
@@ -135,11 +137,11 @@ vector<string> split(string const & s, regex const & r) {
 //		ret.push_back(i->str());
 //	}
 
-	smatch m;
-	regex_search(s, m, r);
+	boost::smatch m;
+	boost::regex_search(s, m, r);
 
 	x.push_back(0);
-	for(int i = 0; i < m.size(); ++i) {
+	for(unsigned i = 0; i < m.size(); ++i) {
 		int pos = m.position(i);
 		int len = pos + m.length(i);
 		if (x[x.size() - 1] < pos) {
@@ -149,7 +151,7 @@ vector<string> split(string const & s, regex const & r) {
 	}
 	x.push_back(s.size());
 
-	for(int i = 0; i < x.size(); i += 2) {
+	for(unsigned i = 0; i < x.size(); i += 2) {
 		//cout << string({&(s[x[i]]), &(s[x[i+1]])}) << endl;
 		ret.push_back(string({&(s[x[i]]), &(s[x[i+1]])}));
 	}
@@ -165,12 +167,12 @@ public:
 
 
 	config_parser_t(char const * filename) {
-		regex space{"\\s+"};
-		regex group_name{"@[_a-zA-Z]\\w*"};
-		regex group_id{"@\\d+"};
-		regex user_name{"[_a-zA-Z]\\w*"};
-		regex user_id{"\\d+"};
-		regex number{"[+-]?\\d+"};
+		boost::regex space{"\\s+"};
+		boost::regex group_name{"@[_a-zA-Z]\\w*"};
+		boost::regex group_id{"@\\d+"};
+		boost::regex user_name{"[_a-zA-Z]\\w*"};
+		boost::regex user_id{"\\d+"};
+		boost::regex number{"[+-]?\\d+"};
 
 		ifstream in(filename, ios::in);
 		string line;
@@ -196,7 +198,7 @@ public:
 
 			int adj = stoi(x[1]);
 
-			if(regex_match(x[0], group_name)) {
+			if(boost::regex_match(x[0], group_name)) {
 				struct group * grp;
 				grp = getgrnam(&(x[0].c_str())[1]);
 				if(grp != 0) {
@@ -204,10 +206,10 @@ public:
 				} else {
 					std::cout << "not found group id: " << x[0] << std::endl;
 				}
-			} else if (regex_match(x[0], group_id)) {
+			} else if (boost::regex_match(x[0], group_id)) {
 				gid_t gid = atoi(&(x[0].c_str())[1]);
 				rules.push_back(make_shared<group_rule_t>(gid, adj));
-			} else if (regex_match(x[0], user_name)) {
+			} else if (boost::regex_match(x[0], user_name)) {
 				struct passwd * pwd;
 				pwd = getpwnam(x[0].c_str());
 				if(pwd != 0) {
@@ -215,7 +217,7 @@ public:
 				} else {
 					std::cout << "not found user id: " << x[0] << std::endl;
 				}
-			} else if (regex_match(x[0], user_id)) {
+			} else if (boost::regex_match(x[0], user_id)) {
 				uid_t uid = stoi(x[0]);
 				rules.push_back(make_shared<user_rule_t>(uid, adj));
 			}
