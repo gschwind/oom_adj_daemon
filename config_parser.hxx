@@ -166,9 +166,9 @@ public:
 
 	config_parser_t(char const * filename) {
 		regex space{"\\s+"};
-		regex group_name{"@[_[:alpha:]]\\w*"};
+		regex group_name{"@[_a-zA-Z]\\w*"};
 		regex group_id{"@\\d+"};
-		regex user_name{"[_[:alpha:]]\\w*"};
+		regex user_name{"[_a-zA-Z]\\w*"};
 		regex user_id{"\\d+"};
 		regex number{"[+-]?\\d+"};
 
