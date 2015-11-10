@@ -15,8 +15,8 @@ for d in os.listdir("/proc"):
   f = open(os.path.join("/proc", d, "oom_score_adj"), "r")
   adj = int(f.read())
   f.close()
-  f = open(os.path.join("/proc", d, "cmdline"), "r")
-  cmd = os.path.basename(f.read().split('\x00')[0])
+  f = open(os.path.join("/proc", d, "stat"), "r")
+  cmd = f.read().split(' ')[1]
   f.close()
   st = os.stat(os.path.join("/proc", d))
   us = getpwuid(st.st_uid)
