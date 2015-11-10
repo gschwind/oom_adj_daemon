@@ -1,0 +1,27 @@
+#
+# Configuration is rules based. Each line are processed
+# from firt line to last line. first line that match
+# stop the processing of following rules.
+#
+# rules syntax is :
+#
+# rule_name rule_arg0 rule_arg1 ... rule_argN
+#
+# Empty line or line starting with # are comments.
+#
+# Currently 2 rule are supported:
+#  - user
+#  - and group.
+# 
+# the user rule take user name or user id as arg0 and
+# oom_score_adj value as arg1 as the foliwing exemple:
+user		root			0
+#
+# Then group rule take group name or group id as arg0
+# and oom_scaore_adj as arg1, like following example:
+group		gschwind		601
+
+# some other rule:
+user		gschwind		501
+
+# end of sample.
